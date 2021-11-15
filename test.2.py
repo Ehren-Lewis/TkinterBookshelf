@@ -314,6 +314,12 @@ class TestPage:
         self.row_2_frame.pack(expand=True, fill='both')
         self.row_3_frame = Frame(self.root, bg='green')
         self.row_3_frame.pack(expand=True, fill='both')
+        self.row_4_frame = Frame(self.root, bg='purple')
+        self.row_4_frame.pack(expand=True, fill='both')
+        self.message_frame.update()
+        print( self.message_frame.winfo_height(),
+            self.row_1_frame.winfo_height(),  self.row_2_frame.winfo_height(), self.row_3_frame.winfo_height(),
+              self.row_4_frame.winfo_height(),)
 
     def present_bookshelf(self):
         button_binder = None
@@ -328,34 +334,33 @@ class TestPage:
         for i in node_list:
             d[i.get_value()] = Button()
 
-        self.buttonval = ''
-
-        print(d)
+        # print(d)
         new_d = {}
+        reverse_new_d = {}
         for i in range(len(table_names)):
             if i == 9:
                 self.top_message['text'] = "No more tables can be added, please delete one"
                 break
 
             if i // 3 == 0:
-                button_binder = Button(self.row_1_frame,
-                                       command=lambda : self.change_text(node_list[i].get_value()),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder = Button(self.row_1_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
+                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
             elif i // 3 == 1:
-                button_binder = Button(self.row_2_frame,
-                                       command=lambda x=f"test{i}": self.button_change(x),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder = Button(self.row_2_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-            elif i // 3 == 2:
-                button_binder = Button(self.row_3_frame,
-                                       command=lambda: self.create_bookshelf_window(node_list[i].get_value()),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
-                button_binder.pack(side='left', expand=True)
-            new_d[node_list[i].get_value()] = button_binder
-        print(new_d)
+                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
 
-        print(new_d['test2'].cget('text'))
+            elif i // 3 == 2:
+                button_binder = Button(self.row_3_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder.pack(side='left', expand=True)
+                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
+
+            new_d[node_list[i].get_value()] = button_binder
+
+
+
+
 
     def create_bookshelf_window(self, table_name):
         new_root = Toplevel()
@@ -374,7 +379,7 @@ class TestPage:
 
 if __name__ == "__main__":
     root = Tk()
-    root.geometry('452x400')
+    root.geometry('452x500')
     root.title("Personal Bookshelf")
     root.resizable(width=False, height=False)
     # app = Start(root)
