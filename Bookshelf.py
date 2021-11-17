@@ -4,6 +4,8 @@ import sqlite3
 from tkinter import messagebox
 from LinkedList import Node, LinkedList
 
+from ttkthemes import themed_tk as tkk
+
 
 class Database2:
     # maybe ask where they would like the database to be?
@@ -70,8 +72,6 @@ class BookshelfPage:
         self.scroll_bar()
         self.view_tree()
         self.create_label_frame()
-        # self.root.wm_protocol("WM_DELETE_WINDOW", root.destroy)
-        # self.root.protocol("WM_DELETE_WINDOW", root.destroy())
 
     def create_label_frame(self):
         self.book_title = LabelFrame(self.root, text='', width=100, height=70, bd=0,
@@ -81,23 +81,27 @@ class BookshelfPage:
         self.book_test.grid(row=1, column=1)
         self.book_test.place(x=50, y=35, anchor='center')
 
-        # These methods below will be going on a different page
+
 
     def back_button(self):
-        Button(self.root, text='Back', fg='white', bg='red', command=self.on_back_button_pressed,
-               width=5, height=1).grid(row=0, column=0, sticky=W)
+        ttk.Button(self.root, text='Back', command=self.on_back_button_pressed,
+                   width=5).grid(row=0, column=0, sticky=W)
+        # fg=white, bg=red
 
     def on_back_button_pressed(self):
         self.root.destroy()
         root.deiconify()
 
     def book_buttons(self):
-        Button(self.root, text="Add", fg='white', bg='blue', command=self.add_method,
-               width=5, height=1).grid(row=4, column=1, pady=15)
-        Button(self.root, text="Modify", fg='white', bg='green', command=self.modify_button_pressed,
-               width=5, height=1).grid(row=4, column=2, pady=15)
-        Button(self.root, text='Delete', fg='white', bg='red', command=self.on_deleted_clicked,
-               width=5, height=1).grid(row=4, column=3, pady=15)
+        ttk.Button(self.root, text="Add", command=self.add_method,
+                   width=7).grid(row=4, column=1, pady=15)
+        # bg= blue, fg=white
+        ttk.Button(self.root, text="Modify", command=self.modify_button_pressed,
+                   width=7).grid(row=4, column=2, pady=15)
+        # bg=green, fg=white
+        ttk.Button(self.root, text='Delete', command=self.on_deleted_clicked,
+                   width=7).grid(row=4, column=3, pady=15)
+        # bg=red, fg=white
 
     def message_field(self):
         self.message = Label(self.root, text='')
@@ -231,15 +235,15 @@ class StartPage:
     def main_frame(self):
         self.message_frame = Frame(self.root)
         self.message_frame.pack(pady=25, fill='both')
-        self.top_message = Label(self.message_frame, text='')
+        self.top_message = Label(self.message_frame)
         self.top_message.pack()
-        self.row_1_frame = Frame(self.root, bg='blue')
+        self.row_1_frame = Frame(self.root)
         self.row_1_frame.pack(expand=True, fill='both')
-        self.row_2_frame = Frame(self.root, bg='red')
+        self.row_2_frame = Frame(self.root)
         self.row_2_frame.pack(expand=True, fill='both')
-        self.row_3_frame = Frame(self.root, bg='green')
+        self.row_3_frame = Frame(self.root)
         self.row_3_frame.pack(expand=True, fill='both')
-        self.row_4_frame = Frame(self.root, bg='teal')
+        self.row_4_frame = Frame(self.root)
         self.row_4_frame.pack(expand=True, fill='both')
         self.message_frame.update()
 
@@ -258,23 +262,23 @@ class StartPage:
                 break
 
             if i // 3 == 0:
-                button_binder = Button(self.row_1_frame, text=f"{self.name_list[i]}", width=12, height=2)
+                button_binder = ttk.Button(self.row_1_frame, text=f"{self.name_list[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
                 button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
             elif i // 3 == 1:
-                button_binder = Button(self.row_2_frame, text=f"{self.name_list[i]}", width=12, height=2)
+                button_binder = ttk.Button(self.row_2_frame, text=f"{self.name_list[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
                 button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
 
             elif i // 3 == 2:
-                button_binder = Button(self.row_3_frame, text=f"{self.name_list[i]}", width=12, height=2)
+                button_binder = ttk.Button(self.row_3_frame, text=f"{self.name_list[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
                 button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
 
             self.button_list.append(button_binder)
             button_binder.bind('<Button-3>', lambda x=button_binder: self.delete_bookshelf_window(x))
 
-        create_button = Button(self.row_4_frame, text="Create Bookshelf", width=12, height=2)
+        create_button = ttk.Button(self.row_4_frame, text="Create Bookshelf", width=15)
         create_button.pack(side='left', expand=True)
         create_button["command"] = self.create_bookshelf_window
         self.button_list.append(create_button)
@@ -290,8 +294,8 @@ class StartPage:
         self.top_label = Label(self.create_window, text='Name: ').grid(row=1, column=0)
         self.entry = Entry(self.create_window)
         self.entry.grid(row=1, column=1)
-        self.top_button = Button(self.create_window, text='Submit', anchor='center',
-                                 command=lambda: self.submit(self.entry.get()))
+        self.top_button = ttk.Button(self.create_window, text='Submit',
+                                     command=lambda: self.submit(self.entry.get()))
         self.top_button.grid(row=2, column=1)
 
         self.create_window.mainloop()
@@ -332,11 +336,15 @@ class StartPage:
 
 
 if __name__ == "__main__":
-    root = Tk()
-    root.geometry('452x500')
-    root.title("Personal Bookshelf")
-    root.resizable(width=False, height=False)
+    # root = Tk()
+    # root.geometry('452x400')
+    # root.title("Personal Bookshelf")
+    # root.resizable(width=False, height=False)
+
+    root = tkk.ThemedTk()
+    root.get_themes()
+    root.set_theme('clearlooks')
+    root.geometry('452x400')
 
     app = StartPage(root)
     root.mainloop()
-
