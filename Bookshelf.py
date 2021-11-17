@@ -2,18 +2,13 @@ from tkinter import *
 from tkinter import ttk
 import sqlite3
 from tkinter import messagebox
-from LinkedList import Node, LinkedList
+from LinkedList import LinkedList
 
 from ttkthemes import themed_tk as tkk
 
 
 class Database2:
-    # maybe ask where they would like the database to be?
-    # perhaps define a __enter__ and a __exit__ method for the class???
     database_name = 'test_start.db'
-    """
-    Create, Read, Update, Delete
-    """
 
     @staticmethod
     def check_available_tables():
@@ -26,13 +21,6 @@ class Database2:
 
     @staticmethod
     def create_table(table_name):
-        # Only on start page
-        current_tables = Database2.check_available_tables()
-        # if table_name in current_tables:
-        #     # show in message that this bookshelf name is already taken
-        #     # raise an error, and then put that in the start page
-        #     pass
-        # else:
         with sqlite3.connect(Database2.database_name) as conn:
             c = conn.cursor()
             c.execute(f"""CREATE TABLE {table_name} (
@@ -40,12 +28,9 @@ class Database2:
                         author TEXT NOT NULL)
                         """)
             conn.commit()
-            # if successful, change message box to show as such, will be in startpage class
 
     @staticmethod
     def delete_table(table_name):
-        current_tables = Database2.check_available_tables()
-
         with sqlite3.connect(Database2.database_name) as conn:
             c = conn.cursor()
             c.execute(f"""DROP TABLE {table_name}""")
@@ -64,6 +49,25 @@ class BookshelfPage:
     def __init__(self, new_root, table_name):
         self.root = new_root
         self.table_name = table_name
+
+        self.book_title = None
+        self.book_test = None
+        self.message = None
+        self.book_tree = None
+        self.scrollbar = None
+        self.add_window = None
+        self.new_title = None
+        self.new_author = None
+        self.new_message = None
+        self.modify_window = None
+        self.old_title = None
+        self.author = None
+        self.iid = None
+        self.new_book_title = None
+
+        self.create_gui()
+
+    def create_gui(self):
         self.create_label_frame()
         self.back_button()
         self.book_buttons()
@@ -77,11 +81,9 @@ class BookshelfPage:
         self.book_title = LabelFrame(self.root, text='', width=100, height=70, bd=0,
                                      labelanchor='s')
         self.book_title.grid(row=0, column=2)
-        self.book_test = Label(self.book_title, text=self.table_name)
+        self.book_test = Label(self.book_title, text=self.table_name)  # check later, refactor
         self.book_test.grid(row=1, column=1)
         self.book_test.place(x=50, y=35, anchor='center')
-
-
 
     def back_button(self):
         ttk.Button(self.root, text='Back', command=self.on_back_button_pressed,
@@ -117,10 +119,10 @@ class BookshelfPage:
         self.book_tree.heading('Author', text='Author')
 
     def view_tree(self):
-        # Convert basic dict to database, each page has different tables
         items = self.book_tree.get_children()
         for item in items:
             self.book_tree.delete(item)
+
         entries = Database2.pull_all(self.table_name)
         for item in entries:
             self.book_tree.insert('', 0, text='', iid=item[0], values=(item[1], item[2]))
@@ -143,6 +145,7 @@ class BookshelfPage:
         self.new_message = Label(self.add_window, text='')
         self.new_message.grid(row=3, column=2, sticky=W)
         Button(self.add_window, text='Submit', command=self.on_add_submit_clicked).grid(row=4, column=2)
+
         self.add_window.mainloop()
 
     def on_add_submit_clicked(self):
@@ -166,6 +169,7 @@ class BookshelfPage:
             c = conn.cursor()
             c.execute(f"DELETE FROM {self.table_name} WHERE title = '{title}'")
             conn.commit()
+
         self.message['text'] = f"{title} deleted"
         self.view_tree()
 
@@ -176,6 +180,7 @@ class BookshelfPage:
         except IndexError:
             self.message['text'] = 'Please select a valid book'
             return
+
         self.delete_method()
 
     def open_modify_window(self):
@@ -206,6 +211,7 @@ class BookshelfPage:
                                 AND title = '{self.old_title}'
                                 AND rowid = '{self.iid}'""")
             conn.commit()
+
         self.message['text'] = f"{self.new_book_title.get()} changed successfully"
         self.view_tree()
         self.modify_window.destroy()
@@ -217,25 +223,42 @@ class BookshelfPage:
         except IndexError:
             self.message['text'] = 'Please select a book to modify'
             return
+
         self.open_modify_window()
 
     @staticmethod
     def ask_quit():
         if messagebox.askokcancel("Notice", "Are you sure to close the application?"):
-            # close the application
             root.destroy()
 
 
 class StartPage:
+
     def __init__(self, root):
         self.root = root
+
+        self.message_frame = None
+        self.top_message = None
+        self.row_1_frame = None
+        self.row_2_frame = None
+        self.row_3_frame = None
+        self.row_4_frame = None
+        self.list_of_buttons = None
+        self.list_of_bookshelves = None
+        self.create_window = None
+        self.create_window_message = None
+
+        self.present_gui()
+
+    def present_gui(self):
         self.main_frame()
         self.present_bookshelf()
 
     def main_frame(self):
         self.message_frame = Frame(self.root)
         self.message_frame.pack(pady=25, fill='both')
-        self.top_message = Label(self.message_frame)
+        self.top_message = Label(self.message_frame, text='Welcome! Created a bookshelf to get started. '
+                                                          'Right click to delete a bookshelf')
         self.top_message.pack()
         self.row_1_frame = Frame(self.root)
         self.row_1_frame.pack(expand=True, fill='both')
@@ -250,53 +273,55 @@ class StartPage:
     def present_bookshelf(self):
         table_names = Database2.check_available_tables()
         bookshelf_linked_list = LinkedList()
-        self.button_list = []
+        button_binder = None
+        self.list_of_buttons = []
+
         for i in table_names:
             bookshelf_linked_list.set_last_node(i[0])
-        node_list = bookshelf_linked_list.node_list()
-        self.name_list = bookshelf_linked_list.print_list()
+        self.list_of_bookshelves = bookshelf_linked_list.print_list()
 
         for i in range(len(table_names)):
             if i == 9:
-                self.top_message['text'] = "No more tables can be added, please delete one"
+                self.top_message['text'] = "No more bookshelves can be added, please delete one"
                 break
 
             if i // 3 == 0:
-                button_binder = ttk.Button(self.row_1_frame, text=f"{self.name_list[i]}", width=15)
+                button_binder = ttk.Button(self.row_1_frame, text=f"{self.list_of_bookshelves[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.list_of_bookshelves[i]: self.open_bookshelf_window(x)
             elif i // 3 == 1:
-                button_binder = ttk.Button(self.row_2_frame, text=f"{self.name_list[i]}", width=15)
+                button_binder = ttk.Button(self.row_2_frame, text=f"{self.list_of_bookshelves[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.list_of_bookshelves[i]: self.open_bookshelf_window(x)
 
             elif i // 3 == 2:
-                button_binder = ttk.Button(self.row_3_frame, text=f"{self.name_list[i]}", width=15)
+                button_binder = ttk.Button(self.row_3_frame, text=f"{self.list_of_bookshelves[i]}", width=15)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.list_of_bookshelves[i]: self.open_bookshelf_window(x)
 
-            self.button_list.append(button_binder)
+            self.list_of_buttons.append(button_binder)
             button_binder.bind('<Button-3>', lambda x=button_binder: self.delete_bookshelf_window(x))
 
         create_button = ttk.Button(self.row_4_frame, text="Create Bookshelf", width=15)
         create_button.pack(side='left', expand=True)
         create_button["command"] = self.create_bookshelf_window
-        self.button_list.append(create_button)
+        self.list_of_buttons.append(create_button)
 
     def create_bookshelf_window(self):
-        if len(self.name_list) == 9:
+        if len(self.list_of_bookshelves) == 9:
             self.top_message["text"] = 'Please delete a bookshelf'
             return
+
         self.create_window = Toplevel()
         self.create_window.title = 'Create Bookshelf'
-        self.create_message = Label(self.create_window)
-        self.create_message.grid(row=0, column=1)
-        self.top_label = Label(self.create_window, text='Name: ').grid(row=1, column=0)
-        self.entry = Entry(self.create_window)
-        self.entry.grid(row=1, column=1)
-        self.top_button = ttk.Button(self.create_window, text='Submit',
-                                     command=lambda: self.submit(self.entry.get()))
-        self.top_button.grid(row=2, column=1)
+        self.create_window_message = Label(self.create_window)
+        self.create_window_message.grid(row=0, column=1)
+        Label(self.create_window, text='Name: ').grid(row=1, column=0)
+        entry = Entry(self.create_window)
+        entry.grid(row=1, column=1)
+        top_button = ttk.Button(self.create_window, text='Submit',
+                                command=lambda: self.submit(entry.get()))
+        top_button.grid(row=2, column=1)
 
         self.create_window.mainloop()
 
@@ -304,32 +329,37 @@ class StartPage:
         bookshelf_name = event.widget.cget('text')
         if messagebox.askyesnocancel("Notice", f"Are you sure you would like to delete {bookshelf_name}?"):
             Database2.delete_table(bookshelf_name)
+
         self.top_message['text'] = f'{bookshelf_name} deleted successfully'
-        for button in self.button_list:
+        for button in self.list_of_buttons:
             button.destroy()
+
         self.present_bookshelf()
 
     def submit(self, table_name):
         if table_name == '':
-            self.create_message['text'] = 'Please input a name'
+            self.create_window_message['text'] = 'Please input a name'
             return
-        print(self.name_list)
+
         table_name = str(table_name)
-        if table_name in self.name_list:
-            self.create_message['text'] = 'Please choose a different table name'
+        if table_name in self.list_of_bookshelves:
+            self.create_window_message['text'] = 'Please choose a different table name'
             return
+
         Database2.create_table(table_name)
         self.create_window.destroy()
-        for button in self.button_list:
+        for button in self.list_of_buttons:
             button.destroy()
+
         self.present_bookshelf()
 
-    def open_bookshelf_window(self, table_name):
+    @staticmethod
+    def open_bookshelf_window(table_name):
         new_root = Toplevel()
         new_root.title(table_name)
         new_root.geometry('500x400')
         new_root.resizable(width=False, height=False)
-        new_app = BookshelfPage(new_root, table_name)
+        BookshelfPage(new_root, table_name)
         new_root.protocol("WM_DELETE_WINDOW", BookshelfPage.ask_quit)
         root.withdraw()
         new_root.mainloop()
@@ -345,6 +375,7 @@ if __name__ == "__main__":
     root.get_themes()
     root.set_theme('clearlooks')
     root.geometry('452x400')
+    root.title('Bookshelf')
 
     app = StartPage(root)
     root.mainloop()
