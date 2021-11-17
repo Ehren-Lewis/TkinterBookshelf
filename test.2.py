@@ -314,20 +314,22 @@ class TestPage:
         self.row_2_frame.pack(expand=True, fill='both')
         self.row_3_frame = Frame(self.root, bg='green')
         self.row_3_frame.pack(expand=True, fill='both')
-        self.row_4_frame = Frame(self.root, bg='purple')
+        self.row_4_frame = Frame(self.root, bg='teal')
         self.row_4_frame.pack(expand=True, fill='both')
         self.message_frame.update()
-        print( self.message_frame.winfo_height(),
-            self.row_1_frame.winfo_height(),  self.row_2_frame.winfo_height(), self.row_3_frame.winfo_height(),
-              self.row_4_frame.winfo_height(),)
 
     def present_bookshelf(self):
         button_binder = None
+        create_button = None
         table_names = Database2.check_available_tables()
         table_root = LinkedList()
         for i in table_names:
             table_root.set_last_node(i[0])
         node_list = table_root.node_list()
+        self.name_list = table_root.print_list()
+
+
+
 
         d = {}
 
@@ -335,6 +337,7 @@ class TestPage:
             d[i.get_value()] = Button()
 
         # print(d)
+        self.button_list = []
         new_d = {}
         reverse_new_d = {}
         for i in range(len(table_names)):
@@ -349,20 +352,55 @@ class TestPage:
             elif i // 3 == 1:
                 button_binder = Button(self.row_2_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
+                button_binder['command'] = lambda x = node_list[i].get_value(): self.open_bookshelf_window(x)
 
             elif i // 3 == 2:
                 button_binder = Button(self.row_3_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
+                button_binder['command'] = lambda x = node_list[i].get_value(): self.open_bookshelf_window(x)
 
             new_d[node_list[i].get_value()] = button_binder
+            self.button_list.append(button_binder)
 
+            right_click_menu = Menu(button_binder, tearoff=0)
+            right_click_menu.add_command(label='Delete',
+                                         command=lambda: self.delete_bookshelf_window(button_binder.cget('text')))
+            button_binder.bind('<Button-3>', lambda z: right_click_menu.tk_popup(button_binder.winfo_pointerx(),
+                                                                                 button_binder.winfo_pointery()))
 
+        create_button = Button(self.row_4_frame, text="Create Bookshelf", width=12, height=2)
+        create_button.pack(side='left', expand=True)
+        create_button["command"] = self.create_bookshelf_window
+    def create_bookshelf_window(self):
+        if len(self.name_list) == 9:
+            self.top_message["text"] = 'Please delete a bookshelf'
+            return
+        self.create_window = Toplevel()
+        self.create_window.title = 'Create Bookshelf'
+        self.create_message = Label(self.create_window)
+        self.create_message.grid(row=0, column=1)
+        self.top_label = Label(self.create_window, text='Name: ').grid(row=1, column=0)
+        self.entry = Entry(self.create_window)
+        self.entry.grid(row=1, column=1)
+        self.top_button = Button(self.create_window, text='Submit', anchor='center',
+                                 command=lambda: self.submit(self.entry.get()))
+        self.top_button.grid(row=2, column=1)
 
+        self.create_window.mainloop()
 
+    def submit(self, table_name):
+        print(self.name_list)
+        table_name = str(table_name)
+        if table_name in self.name_list:
+            self.create_message['text'] = 'Please choose a different table name'
+            return
+        Database2.create_table(table_name)
+        self.create_window.destroy()
+        for button in self.button_list:
+            button.destroy()
+        self.present_bookshelf()
 
-    def create_bookshelf_window(self, table_name):
+    def open_bookshelf_window(self, table_name):
         new_root = Toplevel()
         print(table_name)
         new_root.title(table_name)
@@ -372,10 +410,6 @@ class TestPage:
         new_root.protocol("WM_DELETE_WINDOW", BookshelfPage.ask_quit)
         root.withdraw()
         new_root.mainloop()
-
-    def button_change(self, val):
-        self.buttonval = val
-        print(self.buttonval)
 
 if __name__ == "__main__":
     root = Tk()
