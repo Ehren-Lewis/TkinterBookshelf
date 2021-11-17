@@ -4,8 +4,6 @@ import sqlite3
 from tkinter import messagebox
 from LinkedList import Node, LinkedList
 
-database_name = 'test_start.db'
-
 
 class Database2:
     # maybe ask where they would like the database to be?
@@ -15,7 +13,6 @@ class Database2:
     Create, Read, Update, Delete
     """
 
-    # good
     @staticmethod
     def check_available_tables():
         with sqlite3.connect(Database2.database_name):
@@ -44,92 +41,21 @@ class Database2:
             # if successful, change message box to show as such, will be in startpage class
 
     @staticmethod
+    def delete_table(table_name):
+        current_tables = Database2.check_available_tables()
+
+        with sqlite3.connect(Database2.database_name) as conn:
+            c = conn.cursor()
+            c.execute(f"""DROP TABLE {table_name}""")
+            conn.commit()
+
+    @staticmethod
     def pull_all(table):
         with sqlite3.connect(Database2.database_name) as conn:
             c = conn.cursor()
             query = c.execute(f'SELECT rowid, * FROM {table}')
             conn.commit()
         return query
-
-
-class Start:
-    def __init__(self, root):
-        self.root = root
-        self.main_frame()
-        self.present_bookshelf()
-
-    def main_frame(self):
-        self.message_frame = Frame(self.root)
-        self.message_frame.pack(pady=25, fill='both')
-        self.top_message = Label(self.message_frame, text='test')
-        self.top_message.pack()
-        self.row_1_frame = Frame(self.root, bg='blue')
-        self.row_1_frame.pack(expand=True, fill='both')
-        self.row_2_frame = Frame(self.root, bg='red')
-        self.row_2_frame.pack(expand=True, fill='both')
-        self.row_3_frame = Frame(self.root, bg='green')
-        self.row_3_frame.pack(expand=True, fill='both')
-
-    def button_name(self, name):
-        self.top_message['text'] = name
-
-    def present_bookshelf(self):
-        button_binder = None
-        table_names = Database2.check_available_tables()
-        table_root = LinkedList()
-        for i in table_names:
-            table_root.set_last_node(i[0])
-        node_list = table_root.node_list()
-
-        for i in range(len(table_names)):
-            if i == 9:
-                self.top_message['text'] = "No more tables can be added, please delete one"
-                break
-
-            if i // 3 == 0:
-                button_binder = Button(self.row_1_frame,
-                                       command=lambda: self.create_bookshelf_window(node_list[i].get_value()),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
-                button_binder.pack(side='left', expand=True)
-            elif i // 3 == 1:
-                button_binder = Button(self.row_2_frame,
-                                       command=lambda: self.create_bookshelf_window(button_binder.cget('text')),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
-                button_binder.pack(side='left', expand=True)
-            elif i // 3 == 2:
-                button_binder = Button(self.row_3_frame,
-                                       command=lambda: self.create_bookshelf_window(node_list[i].get_value()),
-                                       text=f"{node_list[i].get_value()}", width=12, height=2)
-                button_binder.pack(side='left', expand=True)
-            right_click_menu = Menu(button_binder, tearoff=0)
-            right_click_menu.add_command(label='Delete',
-                                         command=lambda: self.delete_bookshelf_window(button_binder.cget('text')))
-            button_binder.bind('<Button-3>', lambda z: right_click_menu.tk_popup(button_binder.winfo_pointerx(),
-                                                                                 button_binder.winfo_pointery()))
-
-            # button_binder.bind('<Button-3>', self.button_name(button_binder.cget('text')))
-            print(button_binder.cget('text'))
-            print(hex(id(button_binder)))
-        print(button_binder.cget('text'))
-        #
-        # need
-        # Button(self.frame, command='', text='Create table', width=15,
-        #        height=3).pack(side=
-
-    def delete_bookshelf_window(self, table_name):
-        answer = messagebox.askyesnocancel(title=table_name, message=f"Do you wish to delete {1}")
-        if answer:
-            pass
-
-    def create_bookshelf_window(self, table_name):
-        new_root = Toplevel()
-        # new_root.title(title)
-        new_root.geometry('500x400')
-        new_root.resizable(width=False, height=False)
-        new_app = BookshelfPage(new_root, table_name)
-        new_root.protocol("WM_DELETE_WINDOW", BookshelfPage.ask_quit)
-        root.withdraw()
-        new_root.mainloop()
 
 
 class BookshelfPage:
@@ -217,9 +143,9 @@ class BookshelfPage:
 
     def on_add_submit_clicked(self):
         if len(self.new_title.get()) > 0 and len(self.new_author.get()) > 0:
-            with sqlite3.connect('Bookshelf.db') as conn:
+            with sqlite3.connect(Database2.database_name) as conn:
                 c = conn.cursor()
-                c.execute(f"""INSERT INTO philosophy VALUES 
+                c.execute(f"""INSERT INTO {self.table_name} VALUES 
                                     ('{self.new_title.get()}', '{self.new_author.get()}')""")
                 conn.commit()
 
@@ -232,9 +158,9 @@ class BookshelfPage:
     def delete_method(self):
         self.message['text'] = ""
         title = self.book_tree.item(self.book_tree.selection())['values'][0]
-        with sqlite3.connect('Bookshelf.db') as conn:
+        with sqlite3.connect(Database2.database_name) as conn:
             c = conn.cursor()
-            c.execute(f"DELETE FROM philosophy WHERE title = '{title}'")
+            c.execute(f"DELETE FROM {self.table_name} WHERE title = '{title}'")
             conn.commit()
         self.message['text'] = f"{title} deleted"
         self.view_tree()
@@ -268,9 +194,9 @@ class BookshelfPage:
         Button(self.modify_window, text='Submit', command=self.on_modify_submit_clicked).grid(row=3, column=2)
 
     def on_modify_submit_clicked(self):
-        with sqlite3.connect('Bookshelf.db') as conn:
+        with sqlite3.connect(Database2.database_name) as conn:
             c = conn.cursor()
-            c.execute(f"""UPDATE philosophy
+            c.execute(f"""UPDATE {self.table_name}
                                  SET title = '{self.new_book_title.get()}'
                                  WHERE author = '{self.author}'
                                 AND title = '{self.old_title}'
@@ -296,17 +222,16 @@ class BookshelfPage:
             root.destroy()
 
 
-class TestPage:
-    def __init__(self, root, table_name):
+class StartPage:
+    def __init__(self, root):
         self.root = root
-        self.table_name = table_name
         self.main_frame()
         self.present_bookshelf()
 
     def main_frame(self):
         self.message_frame = Frame(self.root)
         self.message_frame.pack(pady=25, fill='both')
-        self.top_message = Label(self.message_frame, text='test')
+        self.top_message = Label(self.message_frame, text='')
         self.top_message.pack()
         self.row_1_frame = Frame(self.root, bg='blue')
         self.row_1_frame.pack(expand=True, fill='both')
@@ -319,58 +244,41 @@ class TestPage:
         self.message_frame.update()
 
     def present_bookshelf(self):
-        button_binder = None
-        create_button = None
         table_names = Database2.check_available_tables()
-        table_root = LinkedList()
-        for i in table_names:
-            table_root.set_last_node(i[0])
-        node_list = table_root.node_list()
-        self.name_list = table_root.print_list()
-
-
-
-
-        d = {}
-
-        for i in node_list:
-            d[i.get_value()] = Button()
-
-        # print(d)
+        bookshelf_linked_list = LinkedList()
         self.button_list = []
-        new_d = {}
-        reverse_new_d = {}
+        for i in table_names:
+            bookshelf_linked_list.set_last_node(i[0])
+        node_list = bookshelf_linked_list.node_list()
+        self.name_list = bookshelf_linked_list.print_list()
+
         for i in range(len(table_names)):
             if i == 9:
                 self.top_message['text'] = "No more tables can be added, please delete one"
                 break
 
             if i // 3 == 0:
-                button_binder = Button(self.row_1_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder = Button(self.row_1_frame, text=f"{self.name_list[i]}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x = node_list[i].get_value(): self.create_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
             elif i // 3 == 1:
-                button_binder = Button(self.row_2_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder = Button(self.row_2_frame, text=f"{self.name_list[i]}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x = node_list[i].get_value(): self.open_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
 
             elif i // 3 == 2:
-                button_binder = Button(self.row_3_frame, text=f"{node_list[i].get_value()}", width=12, height=2)
+                button_binder = Button(self.row_3_frame, text=f"{self.name_list[i]}", width=12, height=2)
                 button_binder.pack(side='left', expand=True)
-                button_binder['command'] = lambda x = node_list[i].get_value(): self.open_bookshelf_window(x)
+                button_binder['command'] = lambda x=self.name_list[i]: self.open_bookshelf_window(x)
 
-            new_d[node_list[i].get_value()] = button_binder
             self.button_list.append(button_binder)
-
-            right_click_menu = Menu(button_binder, tearoff=0)
-            right_click_menu.add_command(label='Delete',
-                                         command=lambda: self.delete_bookshelf_window(button_binder.cget('text')))
-            button_binder.bind('<Button-3>', lambda z: right_click_menu.tk_popup(button_binder.winfo_pointerx(),
-                                                                                 button_binder.winfo_pointery()))
+            button_binder.bind('<Button-3>', lambda x=button_binder: self.delete_bookshelf_window(x))
 
         create_button = Button(self.row_4_frame, text="Create Bookshelf", width=12, height=2)
         create_button.pack(side='left', expand=True)
         create_button["command"] = self.create_bookshelf_window
+        self.button_list.append(create_button)
+
     def create_bookshelf_window(self):
         if len(self.name_list) == 9:
             self.top_message["text"] = 'Please delete a bookshelf'
@@ -388,7 +296,19 @@ class TestPage:
 
         self.create_window.mainloop()
 
+    def delete_bookshelf_window(self, event):
+        bookshelf_name = event.widget.cget('text')
+        if messagebox.askyesnocancel("Notice", f"Are you sure you would like to delete {bookshelf_name}?"):
+            Database2.delete_table(bookshelf_name)
+        self.top_message['text'] = f'{bookshelf_name} deleted successfully'
+        for button in self.button_list:
+            button.destroy()
+        self.present_bookshelf()
+
     def submit(self, table_name):
+        if table_name == '':
+            self.create_message['text'] = 'Please input a name'
+            return
         print(self.name_list)
         table_name = str(table_name)
         if table_name in self.name_list:
@@ -402,7 +322,6 @@ class TestPage:
 
     def open_bookshelf_window(self, table_name):
         new_root = Toplevel()
-        print(table_name)
         new_root.title(table_name)
         new_root.geometry('500x400')
         new_root.resizable(width=False, height=False)
@@ -411,68 +330,13 @@ class TestPage:
         root.withdraw()
         new_root.mainloop()
 
+
 if __name__ == "__main__":
     root = Tk()
     root.geometry('452x500')
     root.title("Personal Bookshelf")
     root.resizable(width=False, height=False)
-    # app = Start(root)
-    app = TestPage(root, 'test')
+
+    app = StartPage(root)
     root.mainloop()
 
-
-def present_bookshelf(self):
-    column = 0
-    row = 0
-    exec = Database2.check_available_tables()
-    for i in range(len(exec)):
-
-        if i == 8:
-            self.label['text'] = "No more tables can be added, please delete one"
-            break
-
-        row = i // 3 + 1
-        column += 1
-        Button(self.buttonlabel, command='lambda :', text=f"{exec[i][0]}", width=15,
-               height=4).grid(row=row, column=column, padx=15, pady=15)
-        if column / 3 == 1:
-            column = 0
-    if len(exec) % 3 == 0:
-        row += 1
-
-    Button(self.buttonlabel, command='', text='Create table', width=15,
-           height=4).grid(row=row, column=column + 1, padx=15, pady=15)
-
-
-"""
-class Node:
-    def __init__(self, value):
-        self.value = Node(value)
-        self.next_node = None
-    
-    def get_value(self):
-        return self.value
-    
-    def get_next_node(self):
-        return self.next_node
-    
-    def set_next_node(self, node):
-        self.next_node = node
-
-class LinkedList:
-    def __init__(self):
-        self.head = None
-    
-    def set_head_node(self, value):
-        new_head = Node(value)
-        current_head = self.head
-    
-        self.head = new_head
-        if current_head is not None:
-            self.head.set_next_node(current_head)
-    
-    def insert_next_node(self):
-"""
-
-table_names = Database2.check_available_tables()
-table_root = LinkedList()
