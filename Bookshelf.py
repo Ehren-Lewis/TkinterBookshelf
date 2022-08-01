@@ -366,11 +366,6 @@ class StartPage:
 
 
 if __name__ == "__main__":
-    # root = Tk()
-    # root.geometry('452x400')
-    # root.title("Personal Bookshelf")
-    # root.resizable(width=False, height=False)
-
     root = tkk.ThemedTk()
     root.get_themes()
     root.set_theme('clearlooks')
