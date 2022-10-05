@@ -3,12 +3,16 @@ from tkinter import ttk
 import sqlite3
 from tkinter import messagebox
 from LinkedList import LinkedList
-
+import os
 from ttkthemes import themed_tk as tkk
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Database2:
-    database_name = 'test_start.db'
+    # database_name = 'test_start.db'
+    database_name = os.getenv("DB_NAME")
 
     @staticmethod
     def check_available_tables():
